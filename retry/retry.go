@@ -1,24 +1,13 @@
 package retry
 
-import "errors"
-
-type Executor func() error
-type ShouldRetry func(error) bool
-
-var (
-	maxRetryError = errors.New("error limit exceded")
-)
-
-func defaultDecider(err error) bool { return err != nil }
-
-func DoC(maxAttempt int, fn Executor, decide ShouldRetry) error {
-	count := 0
+func DoC(maxAttempt int, fn Executor, retriable Retriable) error {
+	count := 1
 	for {
 		err := fn()
 		if err == nil {
 			return nil
 		}
-		if !decide(err) {
+		if !retriable(err) {
 			return err
 		}
 		count++
@@ -29,5 +18,5 @@ func DoC(maxAttempt int, fn Executor, decide ShouldRetry) error {
 }
 
 func Do(maxAttempt int, fn Executor) error {
-	return DoC(maxAttempt, fn, defaultDecider)
+	return DoC(maxAttempt, fn, defaultRetriable)
 }
